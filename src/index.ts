@@ -68,6 +68,7 @@ import { createBot } from "./bot";
 import { startBackendPing } from "./backend";
 import { env } from "./env";
 import http from "http";
+import { startWebhookServer } from "./health";
 
 const bot = createBot(env.BOT_TOKEN);
 
@@ -78,45 +79,48 @@ bot.catch((err, ctx) => {
 
 async function start() {
   try {
-    // Запускаем бота через long polling
-    await bot.launch();
-    console.log("🤖 Bot started with long polling");
+    // Webhook нужен на Render (иначе 409). При первом деплое RENDER_EXTERNAL_URL может быть пуст — задайте WEBHOOK_URL вручную (https://<service-name>.onrender.com)
+    const baseUrl = process.env.WEBHOOK_URL || process.env.RENDER_EXTERNAL_URL;
 
-    // Render требует слушать process.env.PORT
-    const PORT = parseInt(process.env.PORT || "3000", 10);
+    if (baseUrl) {
+      // Сначала поднимаем сервер на PORT, чтобы Render увидел открытый порт
+      startWebhookServer(bot);
+      const webhookPath = "/webhook";
+      const fullWebhookUrl = `${baseUrl.replace(/\/$/, "")}${webhookPath}`;
+      await bot.telegram.setWebhook(fullWebhookUrl);
+      console.log(`🔗 Webhook: ${fullWebhookUrl}`);
+      console.log("🤖 Bot started (webhook)");
+    } else {
+      await bot.launch();
+      console.log("🤖 Bot started (long polling)");
+      const PORT = parseInt(process.env.PORT || "3000", 10);
+      const server = http.createServer((req, res) => {
+        if (req.url === "/health" && req.method === "GET") {
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(
+            JSON.stringify({
+              status: "ok",
+              timestamp: new Date().toISOString(),
+            }),
+          );
+        } else {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Not found" }));
+        }
+      });
+      server.listen(PORT, "0.0.0.0", () => {
+        console.log(`🏥 Health server on port ${PORT}`);
+      });
+    }
 
-    // Создаем HTTP сервер для health check
-    const server = http.createServer((req, res) => {
-      if (req.url === "/health" && req.method === "GET") {
-        res.writeHead(200, { "Content-Type": "application/json" });
-        res.end(
-          JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
-        );
-        return;
-      }
-
-      // 404 для всех остальных маршрутов
-      res.writeHead(404, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ error: "Not found" }));
-    });
-
-    server.listen(PORT, "0.0.0.0", () => {
-      console.log(`🏥 Health server listening on port ${PORT}`);
-    });
-
-    // Пинг бэкенда (если нужно)
     startBackendPing();
   } catch (error: any) {
     console.error("Failed to start bot:", error);
-
-    // Ошибка 409 = другой экземпляр бота уже запущен
     if (error.response?.error_code === 409) {
       console.error(
-        "⚠️ Another bot instance is already running. " +
-          "Please stop other instances (local or on Render) before starting this one.",
+        "⚠️ 409: use webhook on Render. Set WEBHOOK_URL to your service URL (e.g. https://your-app.onrender.com)"
       );
     }
-
     process.exit(1);
   }
 }
