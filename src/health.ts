@@ -1,8 +1,10 @@
 import http from "http";
 
-const HEALTH_PORT = process.env.HEALTH_PORT
-  ? parseInt(process.env.HEALTH_PORT, 10)
-  : 3001;
+const PORT = process.env.PORT
+  ? parseInt(process.env.PORT, 10)
+  : process.env.HEALTH_PORT
+    ? parseInt(process.env.HEALTH_PORT, 10)
+    : 3001;
 
 export function startHealthServer() {
   const server = http.createServer((req, res) => {
@@ -20,8 +22,8 @@ export function startHealthServer() {
     }
   });
 
-  server.listen(HEALTH_PORT, () => {
-    console.log(`🏥 Health server started on port ${HEALTH_PORT}`);
+  server.listen(PORT, "0.0.0.0", () => {
+    console.log(`🏥 Health server started on port ${PORT}`);
   });
 
   return server;

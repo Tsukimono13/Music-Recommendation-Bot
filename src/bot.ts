@@ -21,12 +21,10 @@ import { antiFloodMiddleware } from "./middlewares/antiFlood";
 export function createBot(token: string) {
   const bot = new Telegraf<Scenes.SceneContext>(token);
 
-  // 1️⃣ session ОБЯЗАТЕЛЬНО перед сценами
   bot.use(session());
   bot.use(antiFloodMiddleware);
   bot.use(cancelMiddleware);
 
-  // 2️⃣ Stage
   const stage = new Scenes.Stage([
     findByArtistScene,
     findBetweenArtistsScene,
@@ -49,7 +47,6 @@ export function createBot(token: string) {
   registerAboutActions(bot);
   registerFeedbackActions(bot);
 
-  // Обработчик для сообщений вне сцен и команд
   bot.use(unknownMessageMiddleware);
 
   return bot;

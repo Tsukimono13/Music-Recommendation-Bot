@@ -4,7 +4,6 @@ if (!BACKEND_URL) {
   throw new Error("BACKEND_URL is not set");
 }
 
-// Таймаут для health check запросов
 const HEALTH_CHECK_TIMEOUT = 5_000; 
 
 function fetchWithTimeout(url: string, timeout: number): Promise<Response> {
