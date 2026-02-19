@@ -4,6 +4,7 @@ import { startBackendPing } from "./backend";
 import { env } from "./env";
 import http from "http";
 import type { Telegraf } from "telegraf";
+import { startDailyFacts } from "./scheduler/dailyFacts";
 
 const bot = createBot(env.BOT_TOKEN);
 
@@ -14,10 +15,20 @@ bot.catch((err, ctx) => {
 const PORT = parseInt(process.env.PORT || "3000", 10);
 const WEBHOOK_PATH = "/webhook";
 
+function getPathname(url: string | undefined): string {
+  if (!url) return "";
+  const pathname = url.split("?")[0] ?? "";
+  return pathname.endsWith("/") && pathname.length > 1
+    ? pathname.slice(0, -1)
+    : pathname;
+}
+
 function startWebhookServer(bot: Telegraf<any>) {
   const server = http.createServer(async (req, res) => {
+    const pathname = getPathname(req.url);
+
     // Health endpoint
-    if (req.url === "/health" && req.method === "GET") {
+    if (pathname === "/health" && req.method === "GET") {
       res.writeHead(200, { "Content-Type": "application/json" });
       res.end(
         JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
@@ -26,7 +37,7 @@ function startWebhookServer(bot: Telegraf<any>) {
     }
 
     // Webhook endpoint
-    if (req.url === WEBHOOK_PATH && req.method === "POST") {
+    if (pathname === WEBHOOK_PATH && req.method === "POST") {
       let body = "";
       req.on("data", (chunk) => {
         body += chunk.toString();
@@ -71,6 +82,8 @@ async function start() {
       await bot.launch();
       console.log("🤖 Bot started with long polling");
     }
+
+    startDailyFacts(bot as Parameters<typeof startDailyFacts>[0]);
   } catch (error: any) {
     console.error("Failed to start bot:", error);
     process.exit(1);

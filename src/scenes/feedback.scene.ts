@@ -16,6 +16,8 @@ export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
 );
 
 feedbackScene.enter(async (ctx) => {
+  // Убираем клавиатуру у поля ввода — отмена только по inline-кнопке под сообщением
+  await ctx.reply("\u200B", Markup.removeKeyboard());
   await ctx.reply(
     `*${escapeMarkdownV2("📋 Отправить фидбэк")}*` +
       `\n\n${escapeMarkdownV2(
