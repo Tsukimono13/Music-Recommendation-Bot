@@ -15,6 +15,7 @@ import { feedbackScene } from "./scenes/feedback.scene";
 import { registerAdminCommands } from "./modules/admin/admin.commands";
 import { registerFeedbackActions } from "./actions/feedback.action";
 import { cancelMiddleware } from "./middlewares/cancel";
+import { feedbackMiddleware } from "./middlewares/feedbackMiddleware";
 import { unknownMessageMiddleware } from "./middlewares/unknownMessage";
 import { antiFloodMiddleware } from "./middlewares/antiFlood";
 
@@ -35,6 +36,8 @@ export function createBot(token: string) {
   ]);
 
   bot.use(stage.middleware());
+  bot.use(feedbackMiddleware);
+
   registerAdminCommands(bot);
   registerStartCommand(bot);
 
