@@ -17,7 +17,7 @@ export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
 
 feedbackScene.enter(async (ctx) => {
   try {
-    await ctx.reply("\u200B", Markup.removeKeyboard());
+    await ctx.reply(" ", Markup.removeKeyboard());
     await ctx.reply(
       `*${escapeMarkdownV2("📋 Отправить фидбэк")}*` +
         `\n\n${escapeMarkdownV2(

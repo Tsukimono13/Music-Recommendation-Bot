@@ -4,7 +4,7 @@ import { startBackendPing } from "./backend";
 import { env } from "./env";
 import http from "http";
 import type { Telegraf } from "telegraf";
-import { startDailyFacts } from "./scheduler/dailyFacts";
+import { runDailyFactsNow, startDailyFacts } from "./scheduler/dailyFacts";
 
 const bot = createBot(env.BOT_TOKEN);
 
@@ -33,6 +33,26 @@ function startWebhookServer(bot: Telegraf<any>) {
       res.end(
         JSON.stringify({ status: "ok", timestamp: new Date().toISOString() }),
       );
+      return;
+    }
+
+    if (pathname === "/cron/daily-fact" && req.method === "GET") {
+      const urlParams = new URLSearchParams((req.url ?? "").split("?")[1] ?? "");
+      const secret = process.env.CRON_SECRET;
+      if (secret && urlParams.get("secret") !== secret) {
+        res.writeHead(403, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: "Forbidden" }));
+        return;
+      }
+      try {
+        const result = await runDailyFactsNow(bot);
+        res.writeHead(200, { "Content-Type": "application/json" });
+        res.end(JSON.stringify(result));
+      } catch (e) {
+        console.error("cron daily-fact error:", e);
+        res.writeHead(500, { "Content-Type": "application/json" });
+        res.end(JSON.stringify({ ok: false, error: String(e) }));
+      }
       return;
     }
 

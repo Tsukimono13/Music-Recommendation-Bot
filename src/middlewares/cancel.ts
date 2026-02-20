@@ -8,7 +8,7 @@ cancelMiddleware.hears("❌ Отмена", async (ctx) => {
   if (ctx.scene?.current) {
     await ctx.scene.leave();
   }
-  await ctx.reply("\u200B", Markup.removeKeyboard());
+  await ctx.reply(" ", Markup.removeKeyboard());
   await ctx.reply("", getStartInlineKeyboard());
 });
 
