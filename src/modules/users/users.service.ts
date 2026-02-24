@@ -65,3 +65,7 @@ export function getUsersCount(): number {
     return 0;
   }
 }
+
+export function getUsers(): User[] {
+  return readUsers();
+}
