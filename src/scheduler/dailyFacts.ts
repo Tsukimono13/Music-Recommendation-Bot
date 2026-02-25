@@ -6,31 +6,19 @@ import { Telegraf } from "telegraf";
 const DATA_DIR = path.join(process.cwd(), "src", "data");
 const FACTS_FILE = path.join(DATA_DIR, "facts.json");
 const USERS_FILE = path.join(DATA_DIR, "users.json");
-const STATE_FILE = path.join(process.cwd(), "factsState.json");
 
 // Каждый день в 10:00 по Москве
 const CRON_SCHEDULE = "0 10 * * *";
 const CRON_TIMEZONE = "Europe/Moscow";
 
-function getState(totalFacts: number) {
-  if (!fs.existsSync(STATE_FILE)) {
-    fs.writeFileSync(STATE_FILE, JSON.stringify({ index: 0 }));
-  }
 
-  const state = JSON.parse(fs.readFileSync(STATE_FILE, "utf-8"));
-
-  if (state.index >= totalFacts) {
-    state.index = 0;
-  }
-
-  return state;
+function getFactIndexForToday(totalFacts: number): number {
+  const moscowDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" });
+  const [y, m, d] = moscowDateStr.split("-").map(Number);
+  const dayKey = y * 10000 + m * 100 + d;
+  return dayKey % totalFacts;
 }
 
-function saveState(index: number) {
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ index }));
-}
-
-/** Рассылка факта дня прямо сейчас (для cron по расписанию и для HTTP-триггера). */
 export async function runDailyFactsNow(bot: Telegraf<any>): Promise<{ ok: boolean; sent: number; error?: string }> {
   if (!fs.existsSync(FACTS_FILE) || !fs.existsSync(USERS_FILE)) {
     const msg = `facts.json or users.json not found (facts: ${FACTS_FILE}, users: ${USERS_FILE})`;
@@ -47,8 +35,8 @@ export async function runDailyFactsNow(bot: Telegraf<any>): Promise<{ ok: boolea
     return { ok: false, sent: 0, error: "No facts or no users" };
   }
 
-  const state = getState(facts.length);
-  const fact = facts[state.index];
+  const factIndex = getFactIndexForToday(facts.length);
+  const fact = facts[factIndex];
   const message = `🧐 Факт дня\n\n${fact}`;
 
   let sent = 0;
@@ -61,7 +49,6 @@ export async function runDailyFactsNow(bot: Telegraf<any>): Promise<{ ok: boolea
     }
   }
 
-  saveState(state.index + 1);
   return { ok: true, sent };
 }
 
