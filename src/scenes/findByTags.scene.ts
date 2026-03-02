@@ -16,6 +16,7 @@ findByTagsScene.enter(async (ctx) => {
       `\n\n${escapeMarkdownV2(
         "Напиши через запятую тэги на английском языке — я найду артистов, максимально совпадающих с твоим запросом. Тэги могут обозначать жанры, страны, музыкальные десятилетия и т. д.",
       )}` +
+      `\n\n${escapeMarkdownV2("Перед отправкой сообщения проверь, что имя артиста или тэг написаны верно — это поможет найти более точные совпадения.")}` +
       `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("Rock, 80s, Japanese Rock")}_`,
     { parse_mode: "MarkdownV2" },
   );
@@ -51,19 +52,19 @@ findByTagsScene.on("text", async (ctx) => {
       (result.tags && result.tags.length > 0);
 
     if (!hasAnyData) {
-      await ctx.reply(notFoundArtistsByTags, { 
+      await ctx.reply(notFoundArtistsByTags, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     } else {
-      await ctx.reply(formatRecommendationHTML(result), { 
+      await ctx.reply(formatRecommendationHTML(result), {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     }
   } catch (error: any) {
     console.error("Error in findByTags:", error);
-    
+
     const errorMessage = getUserErrorMessage(error);
     if (errorMessage) {
       await ctx.reply(errorMessage, {

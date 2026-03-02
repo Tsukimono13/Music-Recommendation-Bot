@@ -15,6 +15,7 @@ findBetweenArtistsScene.enter(async (ctx) => {
       `\n\n${escapeMarkdownV2(
         "Напиши через запятую имена исполнителей или названия групп — и я найду артистов, которые звучат максимально похоже.",
       )}` +
+      `\n\n${escapeMarkdownV2("Перед отправкой сообщения проверь, что имя артиста или тэг написаны верно — это поможет найти более точные совпадения.")}` +
       `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("Rolling Stones, Madonna")}_`,
     { parse_mode: "MarkdownV2" },
   );
@@ -48,19 +49,19 @@ findBetweenArtistsScene.on("text", async (ctx) => {
       (result.tags && result.tags.length > 0);
 
     if (!hasAnyData) {
-      await ctx.reply(notFoundMultipleArtistsMessage, { 
+      await ctx.reply(notFoundMultipleArtistsMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     } else {
-      await ctx.reply(formatRecommendationHTML(result), { 
+      await ctx.reply(formatRecommendationHTML(result), {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     }
   } catch (error: any) {
     console.error("Error in findBetweenArtists:", error);
-    
+
     const errorMessage = getUserErrorMessage(error);
     if (errorMessage) {
       await ctx.reply(errorMessage, {

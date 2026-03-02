@@ -24,6 +24,7 @@ findByArtistTagScene.enter(async (ctx) => {
       `${escapeMarkdownV2(
         "Напиши исполнителей — я найду артистов, которые максимально совпадают с твоими вкусами.",
       )}\n\n` +
+      `\n\n${escapeMarkdownV2("Перед отправкой сообщения проверь, что имя артиста или тэг написаны верно — это поможет найти более точные совпадения.")}` +
       `*${escapeMarkdownV2("Шаг 1.")}*\n` +
       `${escapeMarkdownV2(
         "Введи через запятую имена исполнителей или названия групп (до 5).",
@@ -100,7 +101,7 @@ findByArtistTagScene.on("text", async (ctx) => {
       (result.tags && result.tags.length > 0);
 
     if (!hasAnyData) {
-      await ctx.reply(notFoundMultipleArtistsMessage, { 
+      await ctx.reply(notFoundMultipleArtistsMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
@@ -108,44 +109,43 @@ findByArtistTagScene.on("text", async (ctx) => {
       // Проверяем наличие не найденных артистов или тэгов
       const notFoundArtists = result.notFoundArtists || [];
       const notFoundTags = result.notFoundTags || [];
-      
+
       let warningText = "";
-      
+
       if (notFoundArtists.length > 0 || notFoundTags.length > 0) {
         warningText = "✴️ <b>Обрати внимание:</b>\n\n";
-        
+
         if (notFoundArtists.length > 0) {
           const artistsList = notFoundArtists.join(", ");
-          const artistWord = notFoundArtists.length === 1 ? "артиста" : "артиста(ов)";
+          const artistWord =
+            notFoundArtists.length === 1 ? "артиста" : "артиста(ов)";
           warningText += `Я не нашёл ${artistWord}: <b>${artistsList}</b>\n`;
         }
-        
+
         if (notFoundTags.length > 0) {
           const tagsList = notFoundTags.join(", ");
           const tagWord = notFoundTags.length === 1 ? "тэг" : "тэг(и)";
           warningText += `Я не нашёл ${tagWord}: <b>${tagsList}</b>\n`;
         }
-        
-        warningText += "Возможно это опечатка или у меня нет этого в базе. Результат показан без учёта недоступных данных.\n\n";
+
+        warningText +=
+          "Возможно это опечатка или у меня нет этого в базе. Результат показан без учёта недоступных данных.\n\n";
       }
-      
+
       const recommendationText = formatRecommendationHTML(result, {
         customTitle: "Твой выбор:",
         userArtists: ctx.scene.state.artists || [],
         userTags: ctx.scene.state.tags || [],
       });
-      
-      await ctx.reply(
-        warningText + recommendationText,
-        {
-          parse_mode: "HTML",
-          link_preview_options: { is_disabled: true },
-        },
-      );
+
+      await ctx.reply(warningText + recommendationText, {
+        parse_mode: "HTML",
+        link_preview_options: { is_disabled: true },
+      });
     }
   } catch (e) {
     console.error("Error in findByArtistTag:", e);
-    
+
     const errorMessage = getUserErrorMessage(e);
     if (errorMessage) {
       await ctx.reply(errorMessage, {

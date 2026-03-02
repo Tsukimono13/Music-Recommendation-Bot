@@ -8,7 +8,12 @@ cancelMiddleware.hears("❌ Отмена", async (ctx) => {
   if (ctx.scene?.current) {
     await ctx.scene.leave();
   }
-  await ctx.reply(" ", Markup.removeKeyboard());
+  const rm = await ctx.reply("\u2800", Markup.removeKeyboard());
+  try {
+    await ctx.deleteMessage(rm.message_id);
+  } catch {
+    // ignore
+  }
   await ctx.reply("", getStartInlineKeyboard());
 });
 

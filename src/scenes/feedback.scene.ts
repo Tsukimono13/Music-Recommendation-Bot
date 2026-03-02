@@ -8,7 +8,9 @@ import { getCancelKeyboard } from "../keyboards/cancel.keyboard";
 const feedbackChannelId = env.FEEDBACK_CHANNEL_ID;
 
 if (!feedbackChannelId) {
-  console.warn("⚠️ FEEDBACK_CHANNEL_ID не установлен. Фидбэки не будут отправляться в канал.");
+  console.warn(
+    "⚠️ FEEDBACK_CHANNEL_ID не установлен. Фидбэки не будут отправляться в канал.",
+  );
 }
 
 export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
@@ -17,7 +19,12 @@ export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
 
 feedbackScene.enter(async (ctx) => {
   try {
-    await ctx.reply(" ", Markup.removeKeyboard());
+    const rm = await ctx.reply("\u2800", Markup.removeKeyboard());
+    try {
+      await ctx.deleteMessage(rm.message_id);
+    } catch {
+      // ignore
+    }
     await ctx.reply(
       `*${escapeMarkdownV2("📋 Отправить фидбэк")}*` +
         `\n\n${escapeMarkdownV2(
@@ -68,14 +75,17 @@ feedbackScene.on("text", async (ctx) => {
     );
   } catch (error: any) {
     console.error("Ошибка при отправке фидбэка:", error);
-    
+
     let errorMessage = "⚠️ Не удалось отправить фидбэк. Попробуй позже.";
-    
+
     if (error.response?.description?.includes("chat not found")) {
-      errorMessage = "⚠️ Канал для фидбэков не найден. Проверьте настройки бота.";
-      console.error("Канал не найден. Убедитесь, что бот добавлен в канал и FEEDBACK_CHANNEL_ID правильный.");
+      errorMessage =
+        "⚠️ Канал для фидбэков не найден. Проверьте настройки бота.";
+      console.error(
+        "Канал не найден. Убедитесь, что бот добавлен в канал и FEEDBACK_CHANNEL_ID правильный.",
+      );
     }
-    
+
     await ctx.reply(errorMessage, getStartInlineKeyboard());
   }
 
