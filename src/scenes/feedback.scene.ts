@@ -19,11 +19,15 @@ export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
 
 feedbackScene.enter(async (ctx) => {
   try {
-    const rm = await ctx.reply("\u2800", Markup.removeKeyboard());
     try {
-      await ctx.deleteMessage(rm.message_id);
-    } catch {
-      // ignore
+      const rm = await ctx.reply(".", Markup.removeKeyboard());
+      try {
+        await ctx.deleteMessage(rm.message_id);
+      } catch {
+        // ignore
+      }
+    } catch (e) {
+      console.error("Failed to remove keyboard in feedback enter:", e);
     }
     await ctx.reply(
       `*${escapeMarkdownV2("📋 Отправить фидбэк")}*` +

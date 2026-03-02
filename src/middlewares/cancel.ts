@@ -8,11 +8,15 @@ cancelMiddleware.hears("❌ Отмена", async (ctx) => {
   if (ctx.scene?.current) {
     await ctx.scene.leave();
   }
-  const rm = await ctx.reply("\u2800", Markup.removeKeyboard());
   try {
-    await ctx.deleteMessage(rm.message_id);
-  } catch {
-    // ignore
+    const rm = await ctx.reply(".", Markup.removeKeyboard());
+    try {
+      await ctx.deleteMessage(rm.message_id);
+    } catch {
+      // ignore
+    }
+  } catch (e) {
+    console.error("Failed to remove keyboard in cancel:", e);
   }
   await ctx.reply("", getStartInlineKeyboard());
 });
