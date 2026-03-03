@@ -48,6 +48,21 @@ feedbackScene.enter(async (ctx) => {
   }
 });
 
+// Обработка отмены внутри сцены, чтобы сессия гарантированно обновилась (выход из сцены)
+feedbackScene.action("CANCEL", async (ctx) => {
+  await ctx.answerCbQuery();
+  await ctx.scene.leave();
+  if (ctx.callbackQuery?.message && "message_id" in ctx.callbackQuery.message) {
+    try {
+      await ctx.editMessageReplyMarkup(getStartInlineKeyboard().reply_markup);
+    } catch {
+      await ctx.reply("✅", getStartInlineKeyboard());
+    }
+  } else {
+    await ctx.reply("✅", getStartInlineKeyboard());
+  }
+});
+
 feedbackScene.on("text", async (ctx) => {
   const text = ctx.message.text.trim();
 

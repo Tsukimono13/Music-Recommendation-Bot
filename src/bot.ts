@@ -24,7 +24,6 @@ export function createBot(token: string) {
 
   bot.use(session());
   bot.use(antiFloodMiddleware);
-  bot.use(cancelMiddleware);
 
   const stage = new Scenes.Stage([
     findByArtistScene,
@@ -35,7 +34,16 @@ export function createBot(token: string) {
     feedbackScene,
   ]);
 
-  bot.use(stage.middleware());
+  // Команды (например /stats list) должны обрабатываться даже в сцене — иначе stage перехватывает текст
+  const stageMiddleware = stage.middleware();
+  bot.use((ctx, next) => {
+    const msg = ctx.message && "text" in ctx.message ? ctx.message.text : "";
+    if (typeof msg === "string" && msg.trim().startsWith("/")) {
+      return next();
+    }
+    return stageMiddleware(ctx, next);
+  });
+  bot.use(cancelMiddleware);
   bot.use(feedbackMiddleware);
 
   registerAdminCommands(bot);

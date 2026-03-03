@@ -25,11 +25,11 @@ export function registerAdminCommands(bot: any) {
         const date = u.startedAt.slice(0, 10);
         return `${i + 1}. ${u.id} | ${username} | ${name} | ${date}`;
       });
-      const header = "📋 *Список пользователей*\n\n";
+      const header = "📋 Список пользователей\n\n";
       const maxLen = 4000;
-      let text = header + lines.join("\n");
-      if (text.length <= maxLen) {
-        await ctx.reply(text, { parse_mode: "Markdown" });
+      const listText = header + lines.join("\n");
+      if (listText.length <= maxLen) {
+        await ctx.reply(listText);
       } else {
         const chunkSize = 80;
         for (let i = 0; i < lines.length; i += chunkSize) {
