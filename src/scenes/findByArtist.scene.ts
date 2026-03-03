@@ -1,9 +1,9 @@
 import { Scenes } from "telegraf";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
 import { escapeMarkdownV2 } from "../utils/markdown";
-import { findByArtist } from "../api/music.api";
+import { recommend } from "../api/music.api";
 import { formatRecommendationHTML } from "../utils/formatedRecommendations";
-import { notFoundSingleArtistMessage } from "../consts/errors";
+import { notFoundRecommendationMessage } from "../consts/errors";
 import { isTimeoutError, getUserErrorMessage } from "../utils/errorHandler";
 export const findByArtistScene = new Scenes.BaseScene<Scenes.SceneContext>(
   "find-by-artist",
@@ -13,32 +13,34 @@ findByArtistScene.enter(async (ctx) => {
   await ctx.reply(
     `*${escapeMarkdownV2("🎸 Артист")}*` +
       `\n\n${escapeMarkdownV2(
-        "Напиши имя исполнителя или название группы в сообщениях — и я найду артистов, которые звучат максимально похоже.",
+        "Напиши, кого хочешь послушать — имя артиста или группы. Я подберу похожих.",
       )}` +
-      `\n\n${escapeMarkdownV2("Перед отправкой сообщения проверь, что имя артиста или тэг написаны верно — это поможет найти более точные совпадения.")}` +
-      `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("Rolling Stones")}_`,
+      `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("Rolling Stones")}_ ${escapeMarkdownV2("или")} _${escapeMarkdownV2("похожее на Metallica с пауэр-металом")}_`,
     { parse_mode: "MarkdownV2" },
   );
 });
 
 findByArtistScene.on("text", async (ctx) => {
-  const artistName = ctx.message.text.trim();
-
-  if (!artistName) {
-    await ctx.reply("⚠️ Введи имя артиста текстом");
+  const message = ctx.message.text.trim();
+  if (!message) {
+    await ctx.reply("⚠️ Напиши, что ищешь");
     return;
   }
 
   await ctx.reply(
-    `${escapeMarkdownV2("🔍 Ищу исполнителей, похожих на ")}*${escapeMarkdownV2(artistName)}*${escapeMarkdownV2("...")}`,
+    `${escapeMarkdownV2("🔍 Ищу рекомендации...")}`,
     { parse_mode: "MarkdownV2" },
   );
 
   try {
-    const result = await findByArtist(artistName);
+    const result = await recommend(message);
+    const hasAny =
+      (result.artists && result.artists.length > 0) ||
+      (result.fallbackArtists && result.fallbackArtists.length > 0) ||
+      (result.tags && result.tags.length > 0);
 
-    if (!result.artists || result.artists.length === 0) {
-      await ctx.reply(notFoundSingleArtistMessage, {
+    if (!hasAny) {
+      await ctx.reply(notFoundRecommendationMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
@@ -50,7 +52,6 @@ findByArtistScene.on("text", async (ctx) => {
     }
   } catch (error: any) {
     console.error("Error in findByArtist:", error);
-
     const errorMessage = getUserErrorMessage(error);
     if (errorMessage) {
       await ctx.reply(errorMessage, {
@@ -59,13 +60,12 @@ findByArtistScene.on("text", async (ctx) => {
         ...getStartInlineKeyboard(),
       });
     } else {
-      await ctx.reply(notFoundSingleArtistMessage, {
+      await ctx.reply(notFoundRecommendationMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     }
   }
-
   await ctx.scene.leave();
 });
 

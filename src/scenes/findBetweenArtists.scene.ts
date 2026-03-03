@@ -1,9 +1,9 @@
 import { Scenes } from "telegraf";
 import { escapeMarkdownV2 } from "../utils/markdown";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
-import { findBetweenArtists } from "../api/music.api";
+import { recommend } from "../api/music.api";
 import { formatRecommendationHTML } from "../utils/formatedRecommendations";
-import { notFoundMultipleArtistsMessage } from "../consts/errors";
+import { notFoundRecommendationMessage } from "../consts/errors";
 import { getUserErrorMessage } from "../utils/errorHandler";
 
 export const findBetweenArtistsScene =
@@ -11,45 +11,36 @@ export const findBetweenArtistsScene =
 
 findBetweenArtistsScene.enter(async (ctx) => {
   await ctx.reply(
-    `*${escapeMarkdownV2("🎸🎻 Артисты")}*` +
+    `*${escapeMarkdownV2("🎷🎻 Артисты")}*` +
       `\n\n${escapeMarkdownV2(
-        "Напиши через запятую имена исполнителей или названия групп — и я найду артистов, которые звучат максимально похоже.",
+        "Опиши, что ищешь: несколько артистов или жанр — я подберу похожих.",
       )}` +
-      `\n\n${escapeMarkdownV2("Перед отправкой сообщения проверь, что имя артиста или тэг написаны верно — это поможет найти более точные совпадения.")}` +
-      `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("Rolling Stones, Madonna")}_`,
+      `\n\n${escapeMarkdownV2("Например:")} _${escapeMarkdownV2("хочу группы как Children of Bodom и Slayer с пауэр-металом")}_`,
     { parse_mode: "MarkdownV2" },
   );
 });
 
 findBetweenArtistsScene.on("text", async (ctx) => {
-  const text = ctx.message.text.trim();
-  if (!text) {
-    await ctx.reply("⚠️ Введи имена артистов текстом");
+  const message = ctx.message.text.trim();
+  if (!message) {
+    await ctx.reply("⚠️ Напиши, что ищешь");
     return;
   }
 
-  const artistNames = text
-    .split(",")
-    .map((a) => a.trim())
-    .filter((a) => a.length > 0);
-
   await ctx.reply(
-    `${escapeMarkdownV2("🔍 Ищу исполнителей, похожих на ")}*${artistNames
-      .map(escapeMarkdownV2)
-      .join(", ")}*${escapeMarkdownV2("...")}`,
+    `${escapeMarkdownV2("🔍 Ищу рекомендации...")}`,
     { parse_mode: "MarkdownV2" },
   );
 
   try {
-    const result = await findBetweenArtists(artistNames);
-
-    const hasAnyData =
+    const result = await recommend(message);
+    const hasAny =
       (result.artists && result.artists.length > 0) ||
       (result.fallbackArtists && result.fallbackArtists.length > 0) ||
       (result.tags && result.tags.length > 0);
 
-    if (!hasAnyData) {
-      await ctx.reply(notFoundMultipleArtistsMessage, {
+    if (!hasAny) {
+      await ctx.reply(notFoundRecommendationMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
@@ -61,7 +52,6 @@ findBetweenArtistsScene.on("text", async (ctx) => {
     }
   } catch (error: any) {
     console.error("Error in findBetweenArtists:", error);
-
     const errorMessage = getUserErrorMessage(error);
     if (errorMessage) {
       await ctx.reply(errorMessage, {
@@ -70,13 +60,12 @@ findBetweenArtistsScene.on("text", async (ctx) => {
         ...getStartInlineKeyboard(),
       });
     } else {
-      await ctx.reply(notFoundMultipleArtistsMessage, {
+      await ctx.reply(notFoundRecommendationMessage, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
     }
   }
-
   await ctx.scene.leave();
 });
 

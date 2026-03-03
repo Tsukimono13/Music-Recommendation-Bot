@@ -11,15 +11,18 @@ const USERS_FILE = path.join(DATA_DIR, "users.json");
 const CRON_SCHEDULE = "0 10 * * *";
 const CRON_TIMEZONE = "Europe/Moscow";
 
-
 function getFactIndexForToday(totalFacts: number): number {
-  const moscowDateStr = new Date().toLocaleDateString("en-CA", { timeZone: "Europe/Moscow" });
+  const moscowDateStr = new Date().toLocaleDateString("en-CA", {
+    timeZone: "Europe/Moscow",
+  });
   const [y, m, d] = moscowDateStr.split("-").map(Number);
   const dayKey = y * 10000 + m * 100 + d;
   return dayKey % totalFacts;
 }
 
-export async function runDailyFactsNow(bot: Telegraf<any>): Promise<{ ok: boolean; sent: number; error?: string }> {
+export async function runDailyFactsNow(
+  bot: Telegraf<any>,
+): Promise<{ ok: boolean; sent: number; error?: string }> {
   if (!fs.existsSync(FACTS_FILE) || !fs.existsSync(USERS_FILE)) {
     const msg = `facts.json or users.json not found (facts: ${FACTS_FILE}, users: ${USERS_FILE})`;
     console.log("⚠️", msg);
@@ -27,7 +30,9 @@ export async function runDailyFactsNow(bot: Telegraf<any>): Promise<{ ok: boolea
   }
 
   const facts: string[] = JSON.parse(fs.readFileSync(FACTS_FILE, "utf-8"));
-  const users: { id: number }[] = JSON.parse(fs.readFileSync(USERS_FILE, "utf-8"));
+  const users: { id: number }[] = JSON.parse(
+    fs.readFileSync(USERS_FILE, "utf-8"),
+  );
   const userIds = users.map((u) => u.id);
 
   if (!facts.length || !userIds.length) {
