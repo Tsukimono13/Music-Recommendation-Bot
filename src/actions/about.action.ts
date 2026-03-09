@@ -1,28 +1,12 @@
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
+import { ABOUT_TEXT } from "../consts/about";
 
 export function registerAboutActions(bot: any) {
   bot.action("ABOUT", async (ctx: any) => {
     await ctx.answerCbQuery();
-
-    await ctx.reply(
-      `
-🪪 <b>О проекте MusiGem</b>
-
-Привет! Мы — меломаны, которые любят искать новые музыкальные «алмазы». Решили сделать бот для таких же увлечённых, как мы… ну и для всех, кто просто любит музыку.
-
-Антон Картенов — продакт дизайн  
-Ирина Литвинова — магия кода
-
-Мы независимые разработчики, поэтому <b>MusiGem</b> растёт и развивается только благодаря твоей поддержке и обратной связи.
-
-💡 Есть идеи или найден баг? 
-Пожалуйста, воспользуйся кнопкой 📋 <b>Отправить фидбэк</b> — это самый быстрый способ, чтобы мы об этом узнали.
-
-📫 Для общих вопросов: @psybolord
-
-Спасибо, что ты с нами, и пусть каждый плейлист будет состоять только из драгоценных находок 💎
-      `,
-      { parse_mode: "HTML", ...getStartInlineKeyboard() },
-    );
+    await ctx.reply(ABOUT_TEXT.trim(), {
+      parse_mode: "HTML",
+      ...getStartInlineKeyboard(),
+    });
   });
 }

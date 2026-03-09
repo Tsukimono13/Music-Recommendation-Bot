@@ -1,43 +1,87 @@
 import { capitalizeWords } from "./capitalize";
 
+const maxClose = 3;
+const maxSimilar = 4;
+const maxMaybe = 10;
+const maxTags = 3;
+
+export type RecommendResult = {
+  artists: { artist: string; score: number; spotifyUrl?: string }[];
+  fallbackArtists?: { artist: string; spotifyUrl?: string }[];
+  tags?: string[];
+};
+
 function formatArtistLink(name: string, url?: string): string {
   const title = capitalizeWords(name);
   return url ? `<a href="${url}">${title}</a>` : title;
 }
 
-export function formatRecommendationHTML(
-  result: {
-    artists: { artist: string; score: number; spotifyUrl?: string }[];
-    fallbackArtists?: { artist: string; spotifyUrl?: string }[];
-    tags?: string[];
-  },
-  options?: {
-    customTitle?: string;
-    userArtists?: string[];
-    userTags?: string[];
-  },
-): string {
-  const maxClose = 3;
-  const maxSimilar = 4;
-  const maxMaybe = 10;
-  const maxTags = 3;
-
-  const validArtists = (result.artists || []).filter(
-    (a) => a.artist && a.artist.trim() !== "",
-  );
-
-  const hasArtists = validArtists.length > 0;
-
+function splitArtists(
+  validArtists: { artist: string; score: number; spotifyUrl?: string }[],
+) {
   const close: typeof validArtists = [];
   const similar: typeof validArtists = [];
   const maybe: typeof validArtists = [];
+  const remaining: typeof validArtists = [];
 
   for (const a of validArtists) {
     if (a.score >= 75 && close.length < maxClose) close.push(a);
     else if (a.score >= 55 && a.score < 75 && similar.length < maxSimilar)
       similar.push(a);
     else if (maybe.length < maxMaybe) maybe.push(a);
+    else remaining.push(a);
   }
+  return { close, similar, maybe, remaining };
+}
+
+export function hasDeepDiveContent(result: RecommendResult): boolean {
+  const validArtists = (result.artists || []).filter(
+    (a) => a.artist && a.artist.trim() !== "",
+  );
+  const { remaining } = splitArtists(validArtists);
+  const validTags = (result.tags || []).filter((t) => t && t.trim() !== "");
+  return remaining.length > 0 || validTags.length > maxTags;
+}
+
+export function formatDeepDiveHTML(result: RecommendResult): string {
+  const validArtists = (result.artists || []).filter(
+    (a) => a.artist && a.artist.trim() !== "",
+  );
+  const { remaining } = splitArtists(validArtists);
+  const validTags = (result.tags || []).filter((t) => t && t.trim() !== "");
+
+  let text = "💠 <b>Нашел больше редких алмазов:</b>\n\n";
+  if (remaining.length > 0) {
+    text += remaining
+      .map((a) => formatArtistLink(a.artist, a.spotifyUrl))
+      .join(", ");
+    text += "\n\n";
+  }
+  if (validTags.length > 0) {
+    text +=
+      "<b># Связанные теги:</b>\n" +
+      validTags.map(capitalizeWords).join(", ") +
+      "\n\n";
+  }
+  text += "<i>Powered by Last\u200B.fm, Gemini, Spotify.\nData from MusicBrainz (CC-BY-SA).</i>";
+  return text;
+}
+
+export function formatRecommendationHTML(
+  result: RecommendResult,
+  options?: {
+    customTitle?: string;
+    userArtists?: string[];
+    userTags?: string[];
+  },
+): string {
+  const validArtists = (result.artists || []).filter(
+    (a) => a.artist && a.artist.trim() !== "",
+  );
+
+  const hasArtists = validArtists.length > 0;
+
+  const { close, similar, maybe } = splitArtists(validArtists);
 
   const validTags = (result.tags || [])
     .filter((t) => t && t.trim() !== "")
@@ -67,7 +111,7 @@ export function formatRecommendationHTML(
     }
 
     text +=
-      "<i>Data provided by Last\u200B.fm\nData from MusicBrainz, CC-BY-SA</i>";
+      "<i>Powered by Last\u200B.fm, Gemini, Spotify.\nData from MusicBrainz (CC-BY-SA).</i>";
 
     return text;
   }
@@ -124,7 +168,7 @@ export function formatRecommendationHTML(
   }
 
   text +=
-    "<i>Data provided by Last\u200B.fm and Spotify.\nData from MusicBrainz (CC-BY-SA).</i>";
+    "<i>Powered by Last\u200B.fm, Gemini, Spotify.\nData from MusicBrainz (CC-BY-SA).</i>";
 
   return text;
 }
