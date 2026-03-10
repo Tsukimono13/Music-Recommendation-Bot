@@ -39,9 +39,12 @@ findArtistScene.on("text", async (ctx) => {
     return;
   }
 
-  await ctx.reply(`${escapeMarkdownV2("🔍 Уже ищу похожих исполнителей")}`, {
-    parse_mode: "MarkdownV2",
-  });
+  await ctx.reply(
+    `${escapeMarkdownV2("🔍 Уже ищу похожих исполнителей")}\n${escapeMarkdownV2("Это может занять до 40 секунд.")}`,
+    {
+      parse_mode: "MarkdownV2",
+    },
+  );
 
   try {
     const result = await recommend(message);
@@ -50,7 +53,9 @@ findArtistScene.on("text", async (ctx) => {
       (result.fallbackArtists && result.fallbackArtists.length > 0) ||
       (result.tags && result.tags.length > 0);
 
-    const session = ctx.session as { lastRecommendResult?: RecommendResult } | undefined;
+    const session = ctx.session as
+      | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
+      | undefined;
     if (session) session.lastRecommendResult = undefined;
 
     if (!hasAny) {
@@ -71,11 +76,19 @@ findArtistScene.on("text", async (ctx) => {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
-      if (session) session.lastRecommendResult = result as RecommendResult;
+      if (session) {
+        session.lastRecommendResult = result as RecommendResult;
+        session.deepDiveOffset = 0;
+      }
     }
   } catch (e: unknown) {
-    const session = ctx.session as { lastRecommendResult?: RecommendResult } | undefined;
-    if (session) session.lastRecommendResult = undefined;
+    const session = ctx.session as
+      | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
+      | undefined;
+    if (session) {
+      session.lastRecommendResult = undefined;
+      session.deepDiveOffset = undefined;
+    }
     console.error("Error in findArtist:", e);
     const errorMessage = getUserErrorMessage(e);
     if (errorMessage) {
@@ -95,8 +108,12 @@ findArtistScene.on("text", async (ctx) => {
 });
 
 findArtistScene.leave(async (ctx) => {
-  const session = ctx.session as { lastRecommendResult?: RecommendResult } | undefined;
-  const hasDeep = session?.lastRecommendResult && hasDeepDiveContent(session.lastRecommendResult);
+  const session = ctx.session as
+    | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
+    | undefined;
+  const hasDeep =
+    session?.lastRecommendResult &&
+    hasDeepDiveContent(session.lastRecommendResult);
   await ctx.reply(
     "⬇️ Что будем делать дальше?",
     hasDeep ? getStartInlineKeyboardWithDeep() : getStartInlineKeyboard(),

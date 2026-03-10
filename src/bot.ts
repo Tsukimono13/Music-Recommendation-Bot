@@ -13,6 +13,7 @@ import { cancelMiddleware } from "./middlewares/cancel";
 import { feedbackMiddleware } from "./middlewares/feedbackMiddleware";
 import { unknownMessageMiddleware } from "./middlewares/unknownMessage";
 import { antiFloodMiddleware } from "./middlewares/antiFlood";
+import { handleLegacyKeyboard } from "./middlewares/legacyKeyboard";
 
 export function createBot(token: string) {
   const bot = new Telegraf<Scenes.SceneContext>(token);
@@ -46,6 +47,9 @@ export function createBot(token: string) {
   registerFaqActions(bot);
   registerSupportActions(bot);
   registerFeedbackActions(bot);
+
+  // Старая клавиатура: при нажатии на устаревшую кнопку отдаём новое меню
+  bot.on("callback_query", handleLegacyKeyboard);
 
   bot.use(unknownMessageMiddleware);
 

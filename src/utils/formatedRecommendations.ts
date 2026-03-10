@@ -43,28 +43,41 @@ export function hasDeepDiveContent(result: RecommendResult): boolean {
   return remaining.length > 0 || validTags.length > maxTags;
 }
 
-export function formatDeepDiveHTML(result: RecommendResult): string {
+const DEEP_DIVE_PAGE_SIZE = 9;
+const MAX_DEEP_DIVE_PAGES = 2;
+
+export function formatDeepDiveHTMLPaginated(
+  result: RecommendResult,
+  options: { offset: number; limit?: number },
+): { text: string; hasMore: boolean } {
+  const limit = options.limit ?? DEEP_DIVE_PAGE_SIZE;
   const validArtists = (result.artists || []).filter(
     (a) => a.artist && a.artist.trim() !== "",
   );
   const { remaining } = splitArtists(validArtists);
   const validTags = (result.tags || []).filter((t) => t && t.trim() !== "");
 
+  const page = remaining.slice(options.offset, options.offset + limit);
+  const nextEnd = options.offset + limit;
+  const hasMore =
+    remaining.length > nextEnd &&
+    nextEnd < MAX_DEEP_DIVE_PAGES * limit;
+
   let text = "💠 <b>Нашел больше редких алмазов:</b>\n\n";
-  if (remaining.length > 0) {
-    text += remaining
+  if (page.length > 0) {
+    text += page
       .map((a) => formatArtistLink(a.artist, a.spotifyUrl))
       .join(", ");
     text += "\n\n";
   }
-  if (validTags.length > 0) {
+  if (validTags.length > 0 && options.offset === 0) {
     text +=
       "<b># Связанные теги:</b>\n" +
       validTags.map(capitalizeWords).join(", ") +
       "\n\n";
   }
   text += "<i>Powered by Last\u200B.fm, Gemini, Spotify.\nData from MusicBrainz (CC-BY-SA).</i>";
-  return text;
+  return { text, hasMore };
 }
 
 export function formatRecommendationHTML(

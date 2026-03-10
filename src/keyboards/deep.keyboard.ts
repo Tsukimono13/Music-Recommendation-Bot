@@ -1,6 +1,5 @@
 import { Markup } from "telegraf";
 
-/** Клавиатура после выдачи рекомендаций: сначала «Копнуть глубже», затем основное меню */
 export function getStartInlineKeyboardWithDeep() {
   return Markup.inlineKeyboard([
     [Markup.button.callback("⛏️ Копнуть глубже", "FIND_DEEP")],
