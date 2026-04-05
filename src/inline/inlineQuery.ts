@@ -10,7 +10,7 @@ import { logQuery } from "../modules/metrics/metrics.service";
 import type { RecommendResult } from "../utils/formattedRecommendations";
 
 const INLINE_TIMEOUT = 12_000;
-const BOT_USERNAME = "musigem_bot";
+const BOT_USERNAME = "MusiGemBot";
 
 function formatInlineHTML(result: RecommendResult): string {
   const artists = (result.artists || []).filter(
