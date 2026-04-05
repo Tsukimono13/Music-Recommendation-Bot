@@ -18,7 +18,7 @@ Telegram-бот для поиска музыкальных рекомендац�
 | 📋 Отправить фидбэк | Идеи, багрепорты (в канал) |
 
 Дополнительно:
-- **Inline mode** — прямо в любом чате: `@MusiGemBot radiohead`, `@MusiGemBot finnish metal`, `@MusiGemBot queen но больше фанка`
+- **Inline mode** — прямо в любом чате: `@musigem_bot radiohead`, `@musigem_bot finnish metal`, `@musigem_bot queen но больше фанка`
 - Защита от флуда + отдельный rate limit для рекомендаций (3 запроса/мин)
 - Ежедневный «факт дня» в 10:00 МСК
 - Graceful degradation при недоступности Spotify
