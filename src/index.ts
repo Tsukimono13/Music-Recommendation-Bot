@@ -97,7 +97,9 @@ async function start() {
     const baseUrl = process.env.WEBHOOK_URL || process.env.RENDER_EXTERNAL_URL;
     if (baseUrl) {
       const fullWebhookUrl = `${baseUrl.replace(/\/$/, "")}${WEBHOOK_PATH}`;
-      await bot.telegram.setWebhook(fullWebhookUrl);
+      await bot.telegram.setWebhook(fullWebhookUrl, {
+        allowed_updates: ["message", "callback_query", "inline_query", "chosen_inline_result"],
+      });
       console.log(`🔗 Webhook set: ${fullWebhookUrl}`);
     } else {
       await bot.launch();
