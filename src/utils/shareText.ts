@@ -1,7 +1,7 @@
 import { capitalizeWords } from "./capitalize";
 import type { RecommendResult } from "./formattedRecommendations";
 
-const BOT_USERNAME = "MusiGemBot";
+const BOT_USERNAME = "musigem_bot";
 
 export function formatShareText(result: RecommendResult): string {
   const validArtists = (result.artists || []).filter(
