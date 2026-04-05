@@ -1,48 +1,48 @@
-import { Scenes } from "telegraf";
-import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
+import { Telegraf } from "telegraf";
+import { getStartInlineKeyboard, getStartInlineKeyboardWithShare } from "../keyboards/start.keyboard";
 import { getStartInlineKeyboardWithDeep } from "../keyboards/deep.keyboard";
 import {
   formatDeepDiveHTMLPaginated,
   hasDeepDiveContent,
-  type RecommendResult,
-} from "../utils/formatedRecommendations";
+} from "../utils/formattedRecommendations";
+import { buildShareUrl } from "../utils/shareText";
+import type { BotContext } from "../context/context";
 
-type SessionWithDeep = {
-  lastRecommendResult?: RecommendResult;
-  deepDiveOffset?: number;
-};
-
-export function registerArtistActions(bot: any) {
-  bot.action("FIND_ARTIST", async (ctx: Scenes.SceneContext) => {
+export function registerArtistActions(bot: Telegraf<BotContext>) {
+  bot.action("FIND_ARTIST", async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.scene.enter("find-artist");
   });
 
-  bot.action("FIND_DEEP", async (ctx: Scenes.SceneContext) => {
+  bot.action("FIND_DEEP", async (ctx) => {
     await ctx.answerCbQuery();
-    const session = ctx.session as SessionWithDeep | undefined;
-    const result = session?.lastRecommendResult;
+    const result = ctx.session?.lastRecommendResult;
     if (!result || !hasDeepDiveContent(result)) {
       await ctx.reply("По этому запросу больше нечего показать.", getStartInlineKeyboard());
       return;
     }
-    const offset = session?.deepDiveOffset ?? 0;
+    const offset = ctx.session?.deepDiveOffset ?? 0;
     const { text, hasMore } = formatDeepDiveHTMLPaginated(result, {
       offset,
       limit: 9,
     });
+    const shareUrl = buildShareUrl(result);
+    let keyboard;
+    if (hasMore) {
+      keyboard = getStartInlineKeyboardWithDeep(shareUrl);
+    } else {
+      keyboard = getStartInlineKeyboardWithShare(shareUrl);
+    }
     await ctx.reply(text, {
       parse_mode: "HTML",
       link_preview_options: { is_disabled: true },
-      ...(hasMore ? getStartInlineKeyboardWithDeep() : getStartInlineKeyboard()),
+      ...keyboard,
     });
-    if (session) {
-      if (hasMore) {
-        session.deepDiveOffset = offset + 9;
-      } else {
-        session.lastRecommendResult = undefined;
-        session.deepDiveOffset = undefined;
-      }
+    if (hasMore) {
+      ctx.session.deepDiveOffset = offset + 9;
+    } else {
+      ctx.session.lastRecommendResult = undefined;
+      ctx.session.deepDiveOffset = undefined;
     }
   });
 }

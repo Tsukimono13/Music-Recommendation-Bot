@@ -1,14 +1,15 @@
-import { Context, Markup } from "telegraf";
+import { Telegraf } from "telegraf";
 import path from "path";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
 import { escapeMarkdownV2 } from "../utils/markdown";
 import { saveUserIfNotExists } from "../modules/users/users.service";
+import type { BotContext } from "../context/context";
 
-export function registerStartCommand(bot: any) {
-  bot.start(async (ctx: Context) => {
+export function registerStartCommand(bot: Telegraf<BotContext>) {
+  bot.start(async (ctx) => {
     if (ctx.from) {
       try {
-        saveUserIfNotExists({
+        await saveUserIfNotExists({
           id: ctx.from.id,
           username: ctx.from.username,
           firstName: ctx.from.first_name,

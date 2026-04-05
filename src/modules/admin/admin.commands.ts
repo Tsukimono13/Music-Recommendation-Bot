@@ -1,9 +1,11 @@
-import { BotContext } from "../../context/context";
+import { Telegraf } from "telegraf";
+import type { BotContext } from "../../context/context";
 import { getUsers, getUsersCount } from "../users/users.service";
+import { getMetricsSummary } from "../metrics/metrics.service";
 import { isAdmin } from "../../core/isAdmin";
 
-export function registerAdminCommands(bot: any) {
-  bot.command("stats", async (ctx: BotContext) => {
+export function registerAdminCommands(bot: Telegraf<BotContext>) {
+  bot.command("stats", async (ctx) => {
     if (!isAdmin(ctx)) {
       return ctx.reply("⛔ Эта команда доступна только администратору");
     }
@@ -12,10 +14,10 @@ export function registerAdminCommands(bot: any) {
     const args = text.split(/\s+/).slice(1);
     const showList = args[0]?.toLowerCase() === "list";
 
-    const count = getUsersCount();
+    const count = await getUsersCount();
 
     if (showList) {
-      const users = getUsers();
+      const users = await getUsers();
       if (!users.length) {
         return ctx.reply("📋 Список пуст.");
       }
@@ -43,8 +45,56 @@ export function registerAdminCommands(bot: any) {
     }
 
     await ctx.reply(
-      `📊 *Статистика бота*\n\n👤 Пользователей: *${count}*\n\n_Список: /stats list_`,
+      `📊 *Статистика бота*\n\n👤 Пользователей: *${count}*\n\n_Список: /stats list_\n_Метрики: /metrics_`,
       { parse_mode: "Markdown" },
     );
+  });
+
+  bot.command("metrics", async (ctx) => {
+    if (!isAdmin(ctx)) {
+      return ctx.reply("⛔ Эта команда доступна только администратору");
+    }
+
+    const m = await getMetricsSummary();
+
+    if (m.total === 0) {
+      return ctx.reply("📈 Метрик пока нет.");
+    }
+
+    const errorRate = m.total ? Math.round((m.errors / m.total) * 100) : 0;
+
+    let text = `📈 <b>Метрики (последние 100 запросов)</b>\n\n`;
+    text += `Всего запросов: <b>${m.total}</b>\n`;
+    text += `Ошибки: <b>${m.errors}</b> (${errorRate}%)\n`;
+    text += `Таймауты: <b>${m.timeouts}</b>\n`;
+    text += `Пустые результаты: <b>${m.empty}</b>\n`;
+    text += `Среднее время ответа: <b>${m.avgResponseMs}ms</b>\n`;
+
+    if (m.topQueries.length) {
+      text += `\n<b>Топ запросов:</b>\n`;
+      text += m.topQueries
+        .map((q, i) => `${i + 1}. ${q.query} (${q.count}x)`)
+        .join("\n");
+    }
+
+    if (m.slowQueries.length) {
+      text += `\n\n<b>Самые медленные:</b>\n`;
+      text += m.slowQueries
+        .map((q) => `${q.query} — ${(q.responseMs / 1000).toFixed(1)}s`)
+        .join("\n");
+    }
+
+    if (m.recentQueries.length) {
+      text += `\n\n<b>Последние запросы:</b>\n`;
+      text += m.recentQueries
+        .map((q) => {
+          const status = q.error ? `[${q.error}]` : `${q.resultCount} рез.`;
+          const src = q.source === "inline" ? " (inline)" : "";
+          return `${q.query} — ${status}, ${(q.responseMs / 1000).toFixed(1)}s${src}`;
+        })
+        .join("\n");
+    }
+
+    await ctx.reply(text, { parse_mode: "HTML" });
   });
 }

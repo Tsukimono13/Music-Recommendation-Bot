@@ -1,8 +1,16 @@
 import { Markup } from "telegraf";
+import type { InlineKeyboardButton } from "telegraf/types";
 
-export function getStartInlineKeyboardWithDeep() {
-  return Markup.inlineKeyboard([
+type Button = InlineKeyboardButton & { hide?: boolean };
+
+export function getStartInlineKeyboardWithDeep(shareUrl?: string) {
+  const rows: Button[][] = [
     [Markup.button.callback("⛏️ Копнуть глубже", "FIND_DEEP")],
+  ];
+  if (shareUrl) {
+    rows.push([Markup.button.url("📤 Поделиться результатом", shareUrl)]);
+  }
+  rows.push(
     [Markup.button.callback("🎸 Подобрать артистов", "FIND_ARTIST")],
     [
       Markup.button.callback("🍩 Поддержать", "SUPPORT"),
@@ -13,5 +21,6 @@ export function getStartInlineKeyboardWithDeep() {
       Markup.button.callback("❓FAQ", "FAQ"),
     ],
     [Markup.button.callback("📋 Отправить фидбэк", "FEEDBACK")],
-  ]);
+  );
+  return Markup.inlineKeyboard(rows);
 }

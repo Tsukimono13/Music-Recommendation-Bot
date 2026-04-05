@@ -1,17 +1,20 @@
 import { Scenes } from "telegraf";
-import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
+import { getStartInlineKeyboard, getStartInlineKeyboardWithShare } from "../keyboards/start.keyboard";
 import { getStartInlineKeyboardWithDeep } from "../keyboards/deep.keyboard";
+import { buildShareUrl } from "../utils/shareText";
 import { escapeMarkdownV2 } from "../utils/markdown";
 import { recommend } from "../api/music.api";
 import {
   formatRecommendationHTML,
   hasDeepDiveContent,
-  type RecommendResult,
-} from "../utils/formatedRecommendations";
+} from "../utils/formattedRecommendations";
 import { notFoundRecommendationMessage } from "../consts/errors";
-import { getUserErrorMessage } from "../utils/errorHandler";
+import { getUserErrorMessage, isTimeoutError } from "../utils/errorHandler";
+import { logQuery } from "../modules/metrics/metrics.service";
+import { checkRecommendLimit } from "../middlewares/recommendLimit";
+import type { BotContext } from "../context/context";
 
-export const findArtistScene = new Scenes.BaseScene<Scenes.SceneContext>(
+export const findArtistScene = new Scenes.BaseScene<BotContext>(
   "find-artist",
 );
 
@@ -39,6 +42,18 @@ findArtistScene.on("text", async (ctx) => {
     return;
   }
 
+  const userId = ctx.from?.id;
+  if (userId) {
+    const limitResult = checkRecommendLimit(userId);
+    if (limitResult !== true) {
+      await ctx.reply(
+        `⏳ Подожди ${limitResult} сек. перед следующим запросом.`,
+      );
+      await ctx.scene.leave();
+      return;
+    }
+  }
+
   await ctx.reply(
     `${escapeMarkdownV2("🔍 Уже ищу похожих исполнителей")}\n${escapeMarkdownV2("Это может занять до 40 секунд.")}`,
     {
@@ -46,17 +61,19 @@ findArtistScene.on("text", async (ctx) => {
     },
   );
 
+  const startTime = Date.now();
   try {
     const result = await recommend(message);
+    const responseMs = Date.now() - startTime;
+    const resultCount = (result.artists?.length ?? 0) + (result.fallbackArtists?.length ?? 0);
     const hasAny =
       (result.artists && result.artists.length > 0) ||
       (result.fallbackArtists && result.fallbackArtists.length > 0) ||
       (result.tags && result.tags.length > 0);
 
-    const session = ctx.session as
-      | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
-      | undefined;
-    if (session) session.lastRecommendResult = undefined;
+    logQuery({ query: message, resultCount, responseMs, timestamp: new Date().toISOString(), source: "chat" });
+
+    ctx.session.lastRecommendResult = undefined;
 
     if (!hasAny) {
       await ctx.reply(notFoundRecommendationMessage, {
@@ -76,19 +93,16 @@ findArtistScene.on("text", async (ctx) => {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
       });
-      if (session) {
-        session.lastRecommendResult = result as RecommendResult;
-        session.deepDiveOffset = 0;
-      }
+      ctx.session.lastRecommendResult = result;
+      ctx.session.deepDiveOffset = 0;
     }
   } catch (e: unknown) {
-    const session = ctx.session as
-      | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
-      | undefined;
-    if (session) {
-      session.lastRecommendResult = undefined;
-      session.deepDiveOffset = undefined;
-    }
+    const responseMs = Date.now() - startTime;
+    const errorType = isTimeoutError(e) ? "timeout" : "error";
+    logQuery({ query: message, resultCount: 0, responseMs, error: errorType, timestamp: new Date().toISOString(), source: "chat" });
+
+    ctx.session.lastRecommendResult = undefined;
+    ctx.session.deepDiveOffset = undefined;
     console.error("Error in findArtist:", e);
     const errorMessage = getUserErrorMessage(e);
     if (errorMessage) {
@@ -108,14 +122,18 @@ findArtistScene.on("text", async (ctx) => {
 });
 
 findArtistScene.leave(async (ctx) => {
-  const session = ctx.session as
-    | { lastRecommendResult?: RecommendResult; deepDiveOffset?: number }
-    | undefined;
-  const hasDeep =
-    session?.lastRecommendResult &&
-    hasDeepDiveContent(session.lastRecommendResult);
-  await ctx.reply(
-    "⬇️ Что будем делать дальше?",
-    hasDeep ? getStartInlineKeyboardWithDeep() : getStartInlineKeyboard(),
-  );
+  const result = ctx.session?.lastRecommendResult;
+  const hasDeep = result && hasDeepDiveContent(result);
+  const shareUrl = result ? buildShareUrl(result) : undefined;
+
+  let keyboard;
+  if (hasDeep) {
+    keyboard = getStartInlineKeyboardWithDeep(shareUrl);
+  } else if (shareUrl) {
+    keyboard = getStartInlineKeyboardWithShare(shareUrl);
+  } else {
+    keyboard = getStartInlineKeyboard();
+  }
+
+  await ctx.reply("⬇️ Что будем делать дальше?", keyboard);
 });

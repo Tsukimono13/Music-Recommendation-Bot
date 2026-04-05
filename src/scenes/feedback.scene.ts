@@ -1,9 +1,9 @@
-// src/scenes/feedbacks.scene.ts
 import { Scenes, Markup } from "telegraf";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
 import { escapeMarkdownV2 } from "../utils/markdown";
 import { env } from "../env";
 import { getCancelKeyboard } from "../keyboards/cancel.keyboard";
+import type { BotContext } from "../context/context";
 
 const feedbackChannelId = env.FEEDBACK_CHANNEL_ID;
 
@@ -13,9 +13,7 @@ if (!feedbackChannelId) {
   );
 }
 
-export const feedbackScene = new Scenes.BaseScene<Scenes.SceneContext>(
-  "feedback",
-);
+export const feedbackScene = new Scenes.BaseScene<BotContext>("feedback");
 
 feedbackScene.enter(async (ctx) => {
   try {

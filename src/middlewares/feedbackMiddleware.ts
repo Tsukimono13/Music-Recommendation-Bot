@@ -1,7 +1,8 @@
 import type { BotContext } from "../context/context";
 
 export const feedbackMiddleware = async (ctx: BotContext, next: () => Promise<void>) => {
-  const data = ctx.callbackQuery?.data?.trim();
+  const cbQuery = ctx.callbackQuery;
+  const data = cbQuery && "data" in cbQuery ? cbQuery.data?.trim() : undefined;
   if (data !== "FEEDBACK") return next();
 
   try {

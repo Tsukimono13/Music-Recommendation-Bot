@@ -80,6 +80,12 @@ export function formatDeepDiveHTMLPaginated(
   return { text, hasMore };
 }
 
+function hasAnySpotifyUrl(result: RecommendResult): boolean {
+  const hasInArtists = (result.artists || []).some((a) => a.spotifyUrl);
+  const hasInFallback = (result.fallbackArtists || []).some((a) => a.spotifyUrl);
+  return hasInArtists || hasInFallback;
+}
+
 export function formatRecommendationHTML(
   result: RecommendResult,
   options?: {
@@ -99,6 +105,8 @@ export function formatRecommendationHTML(
   const validTags = (result.tags || [])
     .filter((t) => t && t.trim() !== "")
     .slice(0, maxTags);
+
+  const spotifyMissing = validArtists.length > 0 && !hasAnySpotifyUrl(result);
 
   let text = "";
 
@@ -178,6 +186,10 @@ export function formatRecommendationHTML(
     text += `<b># Связанные тэги:</b>\n${validTags
       .map(capitalizeWords)
       .join(", ")}\n\n`;
+  }
+
+  if (spotifyMissing) {
+    text += "<i>Ссылки на Spotify временно недоступны. Найти артистов можно по имени.</i>\n\n";
   }
 
   text +=

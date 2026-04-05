@@ -1,7 +1,8 @@
-import { Scenes } from "telegraf";
+import { Telegraf } from "telegraf";
+import type { BotContext } from "../context/context";
 
-export function registerFeedbackActions(bot: any) {
-  bot.action("FEEDBACK", async (ctx: Scenes.SceneContext) => {
+export function registerFeedbackActions(bot: Telegraf<BotContext>) {
+  bot.action("FEEDBACK", async (ctx) => {
     try {
       await ctx.answerCbQuery();
       await ctx.scene.enter("feedback");

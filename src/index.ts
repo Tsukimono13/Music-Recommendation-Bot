@@ -1,6 +1,6 @@
 import "dotenv/config";
 import { createBot } from "./bot";
-import { startBackendPing } from "./backend";
+import { startBackendPing, startSelfPing } from "./utils/backendPing";
 import { env } from "./env";
 import http from "http";
 import type { Telegraf } from "telegraf";
@@ -92,6 +92,7 @@ async function start() {
   try {
     startWebhookServer(bot);
     startBackendPing();
+    startSelfPing();
 
     const baseUrl = process.env.WEBHOOK_URL || process.env.RENDER_EXTERNAL_URL;
     if (baseUrl) {

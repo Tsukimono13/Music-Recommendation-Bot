@@ -30,3 +30,7 @@ coverage/
 # Temporary
 .tmp/
 .cache/
+
+# AI context
+CLAUDE.md
+PROJECT.md

@@ -2,12 +2,12 @@ import cron from "node-cron";
 import fs from "fs";
 import path from "path";
 import { Telegraf } from "telegraf";
+import { getUserIds } from "../modules/users/users.service";
+import { redis } from "../storage/redis";
 
-const DATA_DIR = path.join(process.cwd(), "src", "data");
-const FACTS_FILE = path.join(DATA_DIR, "facts.json");
-const USERS_FILE = path.join(DATA_DIR, "users.json");
+const REDIS_FACTS_KEY = "bot:facts";
+const LOCAL_FACTS_FILE = path.join(process.cwd(), "src", "data", "facts.json");
 
-// Каждый день в 10:00 по Москве
 const CRON_SCHEDULE = "0 10 * * *";
 const CRON_TIMEZONE = "Europe/Moscow";
 
@@ -20,20 +20,37 @@ function getFactIndexForToday(totalFacts: number): number {
   return dayKey % totalFacts;
 }
 
+async function loadFacts(): Promise<string[]> {
+  // Try Redis first
+  if (redis) {
+    const stored = await redis.lrange(REDIS_FACTS_KEY, 0, -1);
+    if (stored.length > 0) {
+      return stored as string[];
+    }
+  }
+
+  // Fallback to local file
+  if (fs.existsSync(LOCAL_FACTS_FILE)) {
+    const facts: string[] = JSON.parse(
+      fs.readFileSync(LOCAL_FACTS_FILE, "utf-8"),
+    );
+    // Seed Redis if available
+    if (redis && facts.length > 0) {
+      await redis.del(REDIS_FACTS_KEY);
+      await redis.rpush(REDIS_FACTS_KEY, ...facts);
+      console.log(`📅 Seeded ${facts.length} facts into Redis`);
+    }
+    return facts;
+  }
+
+  return [];
+}
+
 export async function runDailyFactsNow(
   bot: Telegraf<any>,
 ): Promise<{ ok: boolean; sent: number; error?: string }> {
-  if (!fs.existsSync(FACTS_FILE) || !fs.existsSync(USERS_FILE)) {
-    const msg = `facts.json or users.json not found (facts: ${FACTS_FILE}, users: ${USERS_FILE})`;
-    console.log("⚠️", msg);
-    return { ok: false, sent: 0, error: msg };
-  }
-
-  const facts: string[] = JSON.parse(fs.readFileSync(FACTS_FILE, "utf-8"));
-  const users: { id: number }[] = JSON.parse(
-    fs.readFileSync(USERS_FILE, "utf-8"),
-  );
-  const userIds = users.map((u) => u.id);
+  const facts = await loadFacts();
+  const userIds = await getUserIds();
 
   if (!facts.length || !userIds.length) {
     console.log("ℹ️ No facts or no users");
@@ -58,8 +75,6 @@ export async function runDailyFactsNow(
 }
 
 export function startDailyFacts(bot: Telegraf<any>) {
-  console.log("📅 Daily facts: paths", { FACTS_FILE, USERS_FILE });
-
   cron.schedule(
     CRON_SCHEDULE,
     async () => {

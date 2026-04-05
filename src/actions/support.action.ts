@@ -1,14 +1,15 @@
-import { Scenes } from "telegraf";
+import { Telegraf } from "telegraf";
 import path from "path";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
+import type { BotContext } from "../context/context";
 
-export function registerSupportActions(bot: any) {
-  bot.action("SUPPORT", async (ctx: Scenes.SceneContext) => {
+export function registerSupportActions(bot: Telegraf<BotContext>) {
+  bot.action("SUPPORT", async (ctx) => {
     await ctx.answerCbQuery();
     await ctx.scene.enter("support");
   });
 
-  bot.action("DONATION_ALERTS", async (ctx: Scenes.SceneContext) => {
+  bot.action("DONATION_ALERTS", async (ctx) => {
     await ctx.answerCbQuery();
     
     await ctx.reply("🔍 Формирую ссылки...");
@@ -18,7 +19,7 @@ export function registerSupportActions(bot: any) {
     });
   });
 
-  bot.action("QRCODE", async (ctx: Scenes.SceneContext) => {
+  bot.action("QRCODE", async (ctx) => {
     await ctx.answerCbQuery();
     
     const qrPath = path.resolve("assets/qr.png");

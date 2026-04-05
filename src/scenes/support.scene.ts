@@ -2,10 +2,9 @@ import { Scenes } from "telegraf";
 import { getStartInlineKeyboard } from "../keyboards/start.keyboard";
 import { getSupportInlineKeyboard } from "../keyboards/support.keyboard";
 import { escapeMarkdownV2 } from "../utils/markdown";
+import type { BotContext } from "../context/context";
 
-export const supportScene = new Scenes.BaseScene<Scenes.SceneContext>(
-  "support",
-);
+export const supportScene = new Scenes.BaseScene<BotContext>("support");
 
 supportScene.enter(async (ctx) => {
   await ctx.reply(

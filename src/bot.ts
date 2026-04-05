@@ -14,14 +14,17 @@ import { feedbackMiddleware } from "./middlewares/feedbackMiddleware";
 import { unknownMessageMiddleware } from "./middlewares/unknownMessage";
 import { antiFloodMiddleware } from "./middlewares/antiFlood";
 import { handleLegacyKeyboard } from "./middlewares/legacyKeyboard";
+import { registerInlineQuery } from "./inline/inlineQuery";
+import { redisSessionStore } from "./storage/sessionStore";
+import type { BotContext } from "./context/context";
 
 export function createBot(token: string) {
-  const bot = new Telegraf<Scenes.SceneContext>(token);
+  const bot = new Telegraf<BotContext>(token);
 
-  bot.use(session());
+  bot.use(session({ store: redisSessionStore }));
   bot.use(antiFloodMiddleware);
 
-  const stage = new Scenes.Stage([
+  const stage = new Scenes.Stage<BotContext>([
     findArtistScene,
     supportScene,
     feedbackScene,
@@ -47,6 +50,8 @@ export function createBot(token: string) {
   registerFaqActions(bot);
   registerSupportActions(bot);
   registerFeedbackActions(bot);
+
+  registerInlineQuery(bot);
 
   // Старая клавиатура: при нажатии на устаревшую кнопку отдаём новое меню
   bot.on("callback_query", handleLegacyKeyboard);
