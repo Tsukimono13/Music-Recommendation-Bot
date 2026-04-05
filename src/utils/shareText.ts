@@ -56,5 +56,6 @@ export function formatShareText(result: RecommendResult): string {
 
 export function buildShareUrl(result: RecommendResult): string {
   const text = formatShareText(result);
-  return "https://t.me/share/url?text=" + encodeURIComponent(text);
+  const botUrl = "https://t.me/" + BOT_USERNAME;
+  return "https://t.me/share/url?url=" + encodeURIComponent(botUrl) + "&text=" + encodeURIComponent(text);
 }

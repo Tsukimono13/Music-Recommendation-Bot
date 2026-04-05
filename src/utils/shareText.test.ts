@@ -54,12 +54,14 @@ describe("formatShareText", () => {
 });
 
 describe("buildShareUrl", () => {
-  it("returns a valid t.me/share URL", () => {
+  it("returns a valid t.me/share URL with url and text params", () => {
     const result: RecommendResult = {
       artists: [makeArtist("Test", 80)],
     };
     const url = buildShareUrl(result);
-    expect(url).toMatch(/^https:\/\/t\.me\/share\/url\?text=/);
+    expect(url).toMatch(/^https:\/\/t\.me\/share\/url\?url=/);
+    expect(url).toContain("&text=");
+    expect(url).toContain(encodeURIComponent("https://t.me/MusiGemBot"));
   });
 
   it("encodes text for URL", () => {
@@ -67,7 +69,6 @@ describe("buildShareUrl", () => {
       artists: [makeArtist("AC/DC", 90)],
     };
     const url = buildShareUrl(result);
-    // Should not contain raw newlines or spaces
     expect(url).not.toContain("\n");
     expect(url).toContain(encodeURIComponent("AC/DC"));
   });
