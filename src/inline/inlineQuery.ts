@@ -96,9 +96,11 @@ export function registerInlineQuery(bot: Telegraf<BotContext>) {
     if (!query || query.length < 2) {
       await ctx.answerInlineQuery([], {
         cache_time: 1,
-        switch_pm_text: "Введи артиста или жанр...",
-        switch_pm_parameter: "inline",
-      } as any);
+        button: {
+          text: "Введи артиста или жанр...",
+          start_parameter: "inline",
+        },
+      });
       return;
     }
 
@@ -138,7 +140,7 @@ export function registerInlineQuery(bot: Telegraf<BotContext>) {
               } as InputTextMessageContent,
             } as InlineQueryResultArticle,
           ],
-          { cache_time: 30, is_personal: true } as any,
+          { cache_time: 30, is_personal: true },
         );
         return;
       }
@@ -156,11 +158,11 @@ export function registerInlineQuery(bot: Telegraf<BotContext>) {
             input_message_content: {
               message_text: html,
               parse_mode: "HTML",
-              disable_web_page_preview: true,
+              link_preview_options: { is_disabled: true },
             } as InputTextMessageContent,
           } as InlineQueryResultArticle,
         ],
-        { cache_time: 300, is_personal: false } as any,
+        { cache_time: 300, is_personal: false },
       );
     } catch (e) {
       const responseMs = Date.now() - startTime;
@@ -172,7 +174,6 @@ export function registerInlineQuery(bot: Telegraf<BotContext>) {
 }
 
 async function answerWithFallback(ctx: any, query: string) {
-  const deepLink = `https://t.me/${BOT_USERNAME}?start=inline`;
   await ctx.answerInlineQuery(
     [
       {
@@ -181,11 +182,18 @@ async function answerWithFallback(ctx: any, query: string) {
         title: `🎸 Найти похожих на «${query}»`,
         description: "Нажми, чтобы открыть бота и получить результат",
         input_message_content: {
-          message_text: `Ищу музыку похожую на «${query}»...\nПопробуй сам → ${deepLink}`,
+          message_text: `Ищу музыку похожую на «${query}»...\nПопробуй сам → @${BOT_USERNAME}`,
           parse_mode: "HTML",
         } as InputTextMessageContent,
       } as InlineQueryResultArticle,
     ],
-    { cache_time: 5, is_personal: true } as any,
+    {
+      cache_time: 5,
+      is_personal: true,
+      button: {
+        text: `Открыть @${BOT_USERNAME}`,
+        start_parameter: "inline",
+      },
+    },
   );
 }
