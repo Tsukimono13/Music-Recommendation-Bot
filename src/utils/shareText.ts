@@ -18,7 +18,7 @@ export function formatShareText(result: RecommendResult): string {
     .slice(0, 4);
   const maybe = validArtists
     .filter((a) => a.score < 55)
-    .slice(0, 5);
+    .slice(0, 10);
 
   if (close.length) {
     lines.push(

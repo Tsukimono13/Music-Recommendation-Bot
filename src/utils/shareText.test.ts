@@ -33,15 +33,14 @@ describe("formatShareText", () => {
     expect(text).toContain("Fallback Two");
   });
 
-  it("limits maybe artists to 5", () => {
-    const artists = Array.from({ length: 10 }, (_, i) =>
+  it("limits maybe artists to 10", () => {
+    const artists = Array.from({ length: 15 }, (_, i) =>
       makeArtist(`Band${i}`, 30),
     );
     const text = formatShareText({ artists });
-    // Only first 5 low-score artists should appear
     expect(text).toContain("Band0");
-    expect(text).toContain("Band4");
-    expect(text).not.toContain("Band5");
+    expect(text).toContain("Band9");
+    expect(text).not.toContain("Band10");
   });
 
   it("capitalizes artist names", () => {
