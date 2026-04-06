@@ -19,8 +19,8 @@ describe("formatShareText", () => {
     expect(text).toContain("Megadeth — 95%");
     expect(text).toContain("Anthrax — 60%");
     expect(text).toContain("Exodus");
-    expect(text).toContain("@MusiGemBot");
-    expect(text).toContain("t.me/MusiGemBot");
+    expect(text).toContain("@musigem_bot");
+    expect(text).toContain("t.me/musigem_bot");
   });
 
   it("uses fallback artists when no scored artists", () => {
@@ -60,7 +60,7 @@ describe("buildShareUrl", () => {
     const url = buildShareUrl(result);
     expect(url).toMatch(/^https:\/\/t\.me\/share\/url\?url=/);
     expect(url).toContain("&text=");
-    expect(url).toContain(encodeURIComponent("https://t.me/MusiGemBot"));
+    expect(url).toContain(encodeURIComponent("https://t.me/musigem_bot"));
   });
 
   it("encodes text for URL", () => {
