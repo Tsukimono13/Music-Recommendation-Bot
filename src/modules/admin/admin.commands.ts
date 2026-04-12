@@ -13,8 +13,8 @@ export function registerAdminCommands(bot: Telegraf<BotContext>) {
     const count = await getUsersCount();
 
     await ctx.reply(
-      `📊 *Статистика бота*\n\n👤 Пользователей: *${count}*\n\n_Список: /stats\\_list_\n_Метрики: /metrics_`,
-      { parse_mode: "Markdown" },
+      `📊 <b>Статистика бота</b>\n\n👤 Пользователей: <b>${count}</b>\n\nСписок: /stats_list\nМетрики: /metrics`,
+      { parse_mode: "HTML" },
     );
   });
 
