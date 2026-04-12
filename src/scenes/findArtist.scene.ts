@@ -55,7 +55,7 @@ findArtistScene.on("text", async (ctx) => {
   }
 
   await ctx.reply(
-    `${escapeMarkdownV2("🔍 Уже ищу похожих исполнителей")}\n${escapeMarkdownV2("Это может занять до 40 секунд.")}`,
+    `${escapeMarkdownV2("🔍 Уже ищу похожих исполнителей")}\n${escapeMarkdownV2("Это может занять несколько секунд.")}`,
     {
       parse_mode: "MarkdownV2",
     },

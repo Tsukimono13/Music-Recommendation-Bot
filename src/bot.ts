@@ -53,7 +53,7 @@ export function createBot(token: string) {
 
   registerInlineQuery(bot);
 
-  // Старая клавиатура: при нажатии на устаревшую кнопку отдаём новое меню
+
   bot.on("callback_query", handleLegacyKeyboard);
 
   bot.use(unknownMessageMiddleware);

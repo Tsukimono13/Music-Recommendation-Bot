@@ -13,7 +13,7 @@ export function registerSupportActions(bot: Telegraf<BotContext>) {
     await ctx.answerCbQuery();
     
     await ctx.reply("🔍 Формирую ссылки...");
-    await ctx.reply("https://dalink.to/antonpsybolord", {
+    await ctx.reply("https://dalink.to/musigem_bot", {
       ...getStartInlineKeyboard(),
       link_preview_options: { is_disabled: true },
     });
